@@ -366,6 +366,12 @@ export const analiticaGetDresInputSchema: InputSchema = {
       oneOf: [{ type: "boolean" }, { type: "string", minLength: 1 }],
     },
     period: { type: "string", minLength: 1 },
+    view: {
+      type: "string",
+      enum: ["annual", "quarterly", "raw"],
+      description:
+        "annual (padrão): um valor por ano fechado + o acumulado do ano corrente, em ordem. quarterly: só trimestres, em ordem. raw: resposta original da API.",
+    },
   },
 };
 

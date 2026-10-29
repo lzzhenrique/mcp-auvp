@@ -327,22 +327,21 @@ export const analiticaToolDefinitions: ToolDefinition[] = [
   ),
   defineTool(
     "auvp_analitica_get_dres",
-    "Get Analitica income statement (DRE) data from GET /api/dres.",
+    "Get Analitica income statement (DRE) data from GET /api/dres (e.g. asset=WEGE3, dre=lucro_liquido or receita_liquida). By default returns one value per closed year plus the current year-to-date, sorted; use view=quarterly or view=raw for other shapes.",
     analiticaGetDresInputSchema,
     async (client, args) => {
       const parsed = analiticaGetDresSchema.parse(args ?? {});
-      return jsonResult(
-        await client.getAnalitica(
-          "/api/dres",
-          definedAnaliticaQuery({
-            aggregate: parsed.aggregate,
-            asset: parsed.asset,
-            dre: parsed.dre,
-            is_fund: parsed.is_fund,
-            period: parsed.period,
-          }),
-        ),
+      const raw = await client.getAnalitica(
+        "/api/dres",
+        definedAnaliticaQuery({
+          aggregate: parsed.aggregate,
+          asset: parsed.asset,
+          dre: parsed.dre,
+          is_fund: parsed.is_fund,
+          period: parsed.period,
+        }),
       );
+      return jsonResult(compactDres(raw, parsed.view ?? "annual"));
     },
   ),
   defineTool(
@@ -658,4 +657,50 @@ function compactShareHolders(payload: unknown): unknown {
     .filter((h): h is { name?: string; positions?: { type?: string; participation?: number }[] } =>
       h != null && typeof h === "object")
     .sort((a, b) => total(b) - total(a));
+}
+
+type DreRow = {
+  start_date?: string;
+  end_date?: string;
+  value?: string | number;
+  dre?: { key?: string; name?: string };
+};
+
+/** Reduz a resposta de /api/dres a uma série ordenada (anual por padrão). */
+function compactDres(payload: unknown, view: "annual" | "quarterly" | "raw"): unknown {
+  if (view === "raw" || !Array.isArray(payload)) return payload;
+  const rows = payload.filter(
+    (r): r is DreRow => r != null && typeof r === "object" && "end_date" in r,
+  );
+  const months = (r: DreRow) => {
+    const a = new Date(r.start_date ?? "");
+    const b = new Date(r.end_date ?? "");
+    return (b.getUTCFullYear() - a.getUTCFullYear()) * 12 + (b.getUTCMonth() - a.getUTCMonth()) + 1;
+  };
+  const startsInJanuary = (r: DreRow) => new Date(r.start_date ?? "").getUTCMonth() === 0;
+  const pick =
+    view === "quarterly"
+      ? rows.filter((r) => months(r) <= 3)
+      : (() => {
+          const fullYears = rows.filter((r) => startsInJanuary(r) && months(r) >= 12);
+          const years = new Set(fullYears.map((r) => r.end_date?.slice(0, 4)));
+          const ytd = rows
+            .filter((r) => startsInJanuary(r) && !years.has(r.end_date?.slice(0, 4)))
+            .sort((a, b) => months(b) - months(a))[0];
+          return ytd ? [...fullYears, ytd] : fullYears;
+        })();
+  const first = rows[0]?.dre;
+  return {
+    dre: first?.key,
+    name: first?.name,
+    view,
+    rows: pick
+      .sort((a, b) => (a.end_date ?? "").localeCompare(b.end_date ?? ""))
+      .map((r) => ({
+        start: r.start_date?.slice(0, 10),
+        end: r.end_date?.slice(0, 10),
+        months: months(r),
+        value: Number(r.value),
+      })),
+  };
 }

@@ -211,6 +211,7 @@ export const analiticaGetDresSchema = z
     dre: z.string().min(1).optional(),
     is_fund: analiticaQueryBooleanSchema,
     period: z.string().min(1).optional(),
+    view: z.enum(["annual", "quarterly", "raw"]).optional(),
   })
   .strict();
 
