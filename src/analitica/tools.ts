@@ -447,15 +447,17 @@ export const analiticaToolDefinitions: ToolDefinition[] = [
   ),
   defineTool(
     "auvp_analitica_get_asset_tooltip",
-    "Get Analitica asset tooltip details through POST /api/bff?key=asset-image-tooltip.",
+    "Get Analitica asset tooltip (quote, P/L, P/VP, DY) through POST /api/bff?key=asset-image-tooltip. The rating field is the Selo de Viabilidade color; seloViabilidade translates it (yellow = REQUER ATENÇÃO, blue = AZULIM).",
     analiticaAssetTooltipInputSchema,
     async (client, args) => {
       const parsed = analiticaAssetTooltipSchema.parse(args ?? {});
       return jsonResult(
-        await client.postAnalitica(
-          "/api/bff",
-          { code: parsed.code },
-          { key: "asset-image-tooltip" },
+        withViabilitySeal(
+          await client.postAnalitica(
+            "/api/bff",
+            { code: parsed.code },
+            { key: "asset-image-tooltip" },
+          ),
         ),
       );
     },
@@ -702,5 +704,25 @@ function compactDres(payload: unknown, view: "annual" | "quarterly" | "raw"): un
         months: months(r),
         value: Number(r.value),
       })),
+  };
+}
+
+/**
+ * Cor do campo rating -> nome do Selo de Viabilidade.
+ * Conferido na página da Analítica em 29/10/2026: yellow (KLBN11) = REQUER ATENÇÃO;
+ * blue (WEGE3, "todos os critérios são viáveis") = AZULIM. As demais cores ainda não foram vistas.
+ */
+const VIABILITY_SEALS: Record<string, string> = {
+  yellow: "REQUER ATENÇÃO",
+  blue: "AZULIM",
+};
+
+function withViabilitySeal(payload: unknown): unknown {
+  if (payload == null || typeof payload !== "object" || Array.isArray(payload)) return payload;
+  const rating = (payload as { rating?: unknown }).rating;
+  if (typeof rating !== "string") return payload;
+  return {
+    ...payload,
+    seloViabilidade: VIABILITY_SEALS[rating] ?? `desconhecido (${rating}): conferir na página`,
   };
 }
