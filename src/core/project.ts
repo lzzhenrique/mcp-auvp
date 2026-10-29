@@ -1,6 +1,6 @@
 /** Metadados do pacote MCP (espelham package.json / README). */
-export const MCP_GITHUB_REPOSITORY = "https://github.com/rod-moraes/mcp-auvp";
-export const MCP_GITHUB_NPX_SPEC = "github:rod-moraes/mcp-auvp";
+export const MCP_GITHUB_REPOSITORY = "https://github.com/lzzhenrique/mcp-auvp";
+export const MCP_GITHUB_NPX_SPEC = "github:lzzhenrique/mcp-auvp";
 export const MCP_PACKAGE_NAME = "mcp-auvp";
 export const MCP_PACKAGE_VERSION = "0.1.0";
 

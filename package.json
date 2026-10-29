@@ -6,11 +6,11 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rod-moraes/mcp-auvp.git"
+    "url": "git+https://github.com/lzzhenrique/mcp-auvp.git"
   },
-  "homepage": "https://github.com/rod-moraes/mcp-auvp#readme",
+  "homepage": "https://github.com/lzzhenrique/mcp-auvp#readme",
   "bugs": {
-    "url": "https://github.com/rod-moraes/mcp-auvp/issues"
+    "url": "https://github.com/lzzhenrique/mcp-auvp/issues"
   },
   "files": [
     "bin",

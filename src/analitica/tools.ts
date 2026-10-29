@@ -347,7 +347,7 @@ export const analiticaToolDefinitions: ToolDefinition[] = [
   ),
   defineTool(
     "auvp_analitica_get_dividends",
-    "Get Analitica dividend history from GET /api/dividends.",
+    "Get Analitica dividend history from GET /api/dividends. Use code + period (e.g. \"5\" or \"10\" years) + aggregate=true. Returns empty data/dividends without a logged-in Analitica session cookie (check auvp_get_auth_status.hasAnaliticaCookie).",
     analiticaGetDividendsInputSchema,
     async (client, args) => {
       const parsed = analiticaGetDividendsSchema.parse(args ?? {});
@@ -370,9 +370,11 @@ export const analiticaToolDefinitions: ToolDefinition[] = [
     async (client, args) => {
       const parsed = analiticaGetShareHoldersSchema.parse(args ?? {});
       return jsonResult(
-        await client.getAnalitica("/api/share-holders", {
-          ticker: parsed.ticker,
-        }),
+        compactShareHolders(
+          await client.getAnalitica("/api/share-holders", {
+            ticker: parsed.ticker,
+          }),
+        ),
       );
     },
   ),
@@ -646,3 +648,14 @@ export const analiticaToolDefinitions: ToolDefinition[] = [
     },
   ),
 ];
+
+/** Remove entradas nulas e ordena por participação total (maior primeiro). */
+function compactShareHolders(payload: unknown): unknown {
+  if (!Array.isArray(payload)) return payload;
+  const total = (h: { positions?: { type?: string; participation?: number }[] }) =>
+    h.positions?.find((p) => p.type === "TOTAL")?.participation ?? 0;
+  return payload
+    .filter((h): h is { name?: string; positions?: { type?: string; participation?: number }[] } =>
+      h != null && typeof h === "object")
+    .sort((a, b) => total(b) - total(a));
+}
