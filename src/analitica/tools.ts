@@ -304,7 +304,7 @@ export const analiticaToolDefinitions: ToolDefinition[] = [
   ),
   defineTool(
     "auvp_analitica_get_balance",
-    "Get Analitica balance sheet data from GET /api/balance.",
+    "Get Analitica balance/indicator data from GET /api/balance. For year-by-year history use codes=TICKER, indicators=roe,patrimonio_liquido (comma list) and period=5 (plain number): returns one value per year. period=5Y or frequency=annual can fail (HTTP 500) or return only the current year.",
     analiticaGetBalanceInputSchema,
     async (client, args) => {
       const parsed = analiticaGetBalanceSchema.parse(args ?? {});
@@ -346,7 +346,7 @@ export const analiticaToolDefinitions: ToolDefinition[] = [
   ),
   defineTool(
     "auvp_analitica_get_dividends",
-    "Get Analitica dividend history from GET /api/dividends. Use code + period (e.g. \"5\" or \"10\" years) + aggregate=true. Returns empty data/dividends without a logged-in Analitica session cookie (check auvp_get_auth_status.hasAnaliticaCookie).",
+    "Get Analitica dividend history from GET /api/dividends. Use code + period (e.g. \"5\" or \"10\" years) + aggregate=true. data/dividends currently come back empty even when logged in; lastDividend (latest registered payout: last_date_prior = data com, payment_date, value) does work. It is not necessarily the next payment.",
     analiticaGetDividendsInputSchema,
     async (client, args) => {
       const parsed = analiticaGetDividendsSchema.parse(args ?? {});
